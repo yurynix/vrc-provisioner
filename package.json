@@ -1,0 +1,5 @@
+{
+  "name": "vcr-provisioner",
+  "private": true,
+  "workspaces": ["packages/*"]
+}
