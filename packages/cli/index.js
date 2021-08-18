@@ -28,7 +28,7 @@ async function openVSCode({ dockerHost, containerId }) {
         containerName: `/${containerId}`
     };
 
-    const containerURI = `vscode-remote://attached-container+${Buffer.from(JSON.stringify(attachedContainerData)).toString('hex')}/workspace`;
+    const containerURI = `vscode-remote://attached-container+${Buffer.from(JSON.stringify(attachedContainerData)).toString('hex')}/workspace/thunderbolt`;
     
     const command = `code --folder-uri=${containerURI}`;
 
