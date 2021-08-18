@@ -1,5 +1,6 @@
 const express = require('express');
 const Docker = require('dockerode');
+const fetch = require('node-fetch');
 const { verifyAuthorizationForTokens } = require('./authorization');
 
 const docker = new Docker({socketPath: '/var/run/docker.sock'});
@@ -40,13 +41,25 @@ async function startVRC(imageName) {
     return await container.start();
 }
 
+async function getExternalIp() {
+    const response = await fetch('https://api.ipify.org?format=json')
+    if (!response.ok) {
+        throw new Error(`Failed to POST to ${url} - ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    return data.ip;
+}
+
 
 (async function main() {
-
     if (!process.env.VRC_SERVER_TOKEN) {
         console.error(`Please set VRC_SERVER_TOKEN`);
         process.exit(1);
     }
+
+    const myExternalIp = await getExternalIp();
 
     const app = express();
     app.use(verifyAuthorizationForTokens(new Set([process.env.VRC_SERVER_TOKEN])));
@@ -82,13 +95,13 @@ async function startVRC(imageName) {
                 return res.status(500).header({"Content-Type": "application/json"}).send({"error": `Unable to start container for ${imageName}`});
             }
             
-            res.status(isContainerStartedNow ? 201 : 200).header({"Content-Type": "application/json"}).send({ containerId: container.Id, imageId: container.ImageID, imageRepoTag: dockerImage.RepoTags[0], dockerHost: 'localhost' });
+            res.status(isContainerStartedNow ? 201 : 200).header({"Content-Type": "application/json"}).send({ containerId: container.Id, imageId: container.ImageID, imageRepoTag: dockerImage.RepoTags[0], dockerHost: `ssh://ubuntu@${myExternalIp}` });
         } catch (ex) {
             res.status(500).header({"Content-Type": "application/json"}).send({"error": `${ex.message}`})
         }
     });
 
     app.listen(port, () => {
-    console.log(`Example app listening at http://localhost:${port}`)
+        console.log(`VRC provisioner server listening at http://${myExternalIp}:${port}`)
     });
 }());
