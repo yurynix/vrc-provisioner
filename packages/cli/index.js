@@ -28,7 +28,7 @@ async function openVSCode({ dockerHost, containerId }) {
         containerName: `/${containerId}`
     };
 
-    const containerURI = `vscode-remote://attached-container+${Buffer.from(JSON.stringify(attachedContainerData)).toString('hex')}/com.docker.devenvironments.code`;
+    const containerURI = `vscode-remote://attached-container+${Buffer.from(JSON.stringify(attachedContainerData)).toString('hex')}/workspace`;
     
     const command = `code --folder-uri=${containerURI}`;
 
@@ -47,7 +47,7 @@ async function startDevEnv(imageName) {
     const response = await fetch(url, {
         method: 'POST',
         body: JSON.stringify({ imageName }),
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.VRC_API_TOKEN}` }
     });
 
     if (!response.ok) {
