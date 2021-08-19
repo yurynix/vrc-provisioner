@@ -22,6 +22,8 @@ const verifyAuthorizationForTokens = (allowedTokens) => async (
   if (tokenType.toLowerCase() === 'bearer' && allowedTokens.has(token)) {
     return next();
   }
+
+  sendNotAuthorizedError(res, 'You have no powers here');
 };
 
 module.exports = { verifyAuthorizationForTokens };
