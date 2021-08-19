@@ -72,12 +72,12 @@ async function getExternalIp() {
 
     // curl -v --header "Content-Type: application/json"  -d '{"imageName": "thunderbolt"}' http://localhost:3000/vrc
     app.post('/vrc', async (req, res) => {
-        //console.log(JSON.stringify(req.params), JSON.stringify(req.body));
         try {
             const { imageName } = req.body;
 
             const dockerImage = await getImageByName(imageName);
             if (!dockerImage) {
+                console.log(`Error: image ${imageName} is unavailible`);
                 return res.status(400).header({"Content-Type": "application/json"}).send({"error": `image ${imageName} is unavailible`});
             }
 
@@ -85,18 +85,20 @@ async function getExternalIp() {
             let isContainerStartedNow = false;
 
             if (!container) {
-                //return res.status(200).header({"Content-Type": "application/json"}).send({ containerId: container.Id, imageId: container.ImageID, imageRepoTag: dockerImage.RepoTags[0] });
+                console.log(`image ${imageName} doesn't have a running container, starting...`);
                 await startVRC(dockerImage.RepoTags[0]);
                 container = await getContainerForImage(dockerImage.Id);
                 isContainerStartedNow = true;
             }
 
             if (!container) {
+                console.log(`Error: Unable to start container for ${imageName}`);
                 return res.status(500).header({"Content-Type": "application/json"}).send({"error": `Unable to start container for ${imageName}`});
             }
             
             res.status(isContainerStartedNow ? 201 : 200).header({"Content-Type": "application/json"}).send({ containerId: container.Id, imageId: container.ImageID, imageRepoTag: dockerImage.RepoTags[0], dockerHost: `ssh://ubuntu@${myExternalIp}` });
         } catch (ex) {
+            console.log(`Error in catch: ${ex.message}\n${ex.stack}`);
             res.status(500).header({"Content-Type": "application/json"}).send({"error": `${ex.message}`})
         }
     });
